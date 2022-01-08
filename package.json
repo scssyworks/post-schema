@@ -1,6 +1,6 @@
 {
   "name": "post-schema",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Post schema is a mock data generator for node",
   "main": "dist/index.js",
   "types": "dist/typings/index.d.ts",
