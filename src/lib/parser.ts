@@ -1,6 +1,15 @@
-const values = require('./values');
+import {
+  Schema,
+  SchemaList,
+  SchemaListItem,
+  SchemaObjectKeys,
+  SchemaObjectMap,
+  SchemaObjectNumber,
+  SchemaObjectString,
+} from '../types';
+import values from './values';
 
-function resolveString(key) {
+function resolveString(key: SchemaObjectString) {
   switch (key.valuetype) {
     case 'name':
       return values.getName();
@@ -20,17 +29,24 @@ function resolveString(key) {
   }
 }
 
-function handleValue(key) {
+function handleValue(key: SchemaObjectKeys): SchemaListItem {
   key.type = key.type.toLowerCase();
   if (key.type === 'string') {
     // Check value type
-    return resolveString(key);
+    return resolveString(key as SchemaObjectString);
   }
   if (key.type === 'number') {
-    if (key.valuetype === 'currency') {
-      return values.getCurrency(key.min, key.max, key.symbol);
+    if ((key as SchemaObjectNumber).valuetype === 'currency') {
+      return values.getCurrency(
+        (key as SchemaObjectNumber).min,
+        (key as SchemaObjectNumber).max,
+        (key as SchemaObjectNumber).symbol
+      );
     }
-    return values.getNumber(key.min, key.max);
+    return values.getNumber(
+      (key as SchemaObjectNumber).min,
+      (key as SchemaObjectNumber).max
+    );
   }
   if (key.type === 'boolean' || ['true', 'false'].includes(key.type)) {
     const fixed = key.type === 'true';
@@ -56,37 +72,38 @@ function handleValue(key) {
     );
   }
   if (key.type === 'list' || key.type === 'object') {
-    return parseNext(key);
+    return parseNext(key as Schema);
   }
+  return '';
 }
 
-function handleItems(items) {
-  if (items && typeof items === 'string') {
-    items = items.toLowerCase();
-    if (items === 'string') {
+function handleItems(item: SchemaListItem) {
+  if (item && typeof item === 'string') {
+    item = item.toLowerCase();
+    if (item === 'string') {
       return values.getString();
     }
-    if (items === 'number') {
+    if (item === 'number') {
       return values.getNumber();
     }
-    if (items === 'boolean') {
+    if (item === 'boolean') {
       return values.getBool();
     }
-    if (items === 'null') {
+    if (item === 'null') {
       return null;
     }
   }
-  if (items && typeof items === 'object' && typeof items.type === 'string') {
-    return handleValue(items);
+  if (item && typeof item === 'object' && typeof item.type === 'string') {
+    return handleValue(item as SchemaObjectKeys);
   } else {
     throw new Error('Invalid items "type" for list');
   }
 }
 
-function parseNext(schema, next) {
+function parseNext(schema: Schema, next?: any) {
   if (schema.type === 'object') {
     next = typeof next === 'undefined' ? {} : next;
-    const keys = schema.keys || [];
+    const keys = (schema as SchemaObjectMap).keys || [];
     if (Array.isArray(keys) && keys.length) {
       keys.forEach((key) => {
         if (typeof key === 'string') {
@@ -102,16 +119,19 @@ function parseNext(schema, next) {
     next = typeof next === 'undefined' ? [] : next;
     for (
       let index = 0;
-      index < (typeof schema.count === 'number' ? schema.count : 5);
+      index <
+      (typeof (schema as SchemaList).count === 'number'
+        ? (schema as SchemaList).count
+        : 5);
       index += 1
     ) {
-      next.push(handleItems(schema.items));
+      next.push(handleItems((schema as SchemaList).items));
     }
   }
   return next;
 }
 
-module.exports = function parser(schema) {
+export default function parser(schema: Schema) {
   if (
     schema &&
     typeof schema === 'object' &&
@@ -122,4 +142,4 @@ module.exports = function parser(schema) {
   } else {
     throw new Error('Provided schema is invalid');
   }
-};
+}

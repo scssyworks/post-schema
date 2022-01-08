@@ -39,6 +39,6 @@ const objectSchema = {
   ],
 };
 
-module.exports = {
+export default {
   objectSchema,
 };
